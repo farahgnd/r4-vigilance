@@ -20,18 +20,20 @@ def list_subjects(cfg: dict) -> list[str]:
 def _to_2d(x: np.ndarray) -> np.ndarray:
     """Met les features au format (n_fenetres, n_features).
 
-    Les features EEG sont souvent stockées en (canaux, fenetres, bandes) :
-    on met l'axe des fenêtres en premier puis on aplatit le reste.
+    Formats réels de SEED-VIG (vérifiés à l'étape 1, voir reports/carte.md) :
+      - EEG : (canaux, fenêtres, bandes), ex. (17, 885, 25) ou (17, 885, 5).
+              L'axe des fenêtres est donc l'axe 1, documenté dans Readme_English.txt.
+      - EOG : (fenêtres, features), ex. (885, 36) : déjà au bon format.
+    On place les fenêtres en premier, puis on aplatit canaux et bandes en
+    une seule dimension de features (17 x 25 = 425 pour le 2 Hz).
     """
     x = np.asarray(x, dtype=float)
     if x.ndim == 1:
         return x[:, None]
     if x.ndim == 2:
-        return x
+        return x  # EOG : (fenêtres, features)
     if x.ndim == 3:
-        # l'axe des fenêtres est le plus long en général (885)
-        win_axis = int(np.argmax(x.shape))
-        x = np.moveaxis(x, win_axis, 0)
+        x = np.moveaxis(x, 1, 0)  # (canaux, fenêtres, bandes) -> (fenêtres, canaux, bandes)
         return x.reshape(x.shape[0], -1)
     raise ValueError(f"Forme inattendue : {x.shape}")
 
