@@ -17,6 +17,12 @@ def list_subjects(cfg: dict) -> list[str]:
     return sorted(p.name for p in label_dir.glob("*.mat"))
 
 
+def lire_labels(cfg: dict, fname: str) -> np.ndarray:
+    """Labels PERCLOS (885,) d'une expérience."""
+    root = Path(cfg["data_dir"])
+    return loadmat(root / cfg["label_dir"] / fname)[cfg["label_key"]].ravel().astype(float)
+
+
 def _to_2d(x: np.ndarray) -> np.ndarray:
     """Met les features au format (n_fenetres, n_features).
 
@@ -45,7 +51,12 @@ def load_subject(cfg: dict, fname: str, modalities: list[str]):
     blocks = []
     for m in modalities:
         spec = cfg["modalities"][m]
-        x = _to_2d(loadmat(root / spec["dir"] / fname)[spec["key"]])
+        x = np.asarray(loadmat(root / spec["dir"] / fname)[spec["key"]], dtype=float)
+        if "canaux" in spec:
+            # Sélection des canaux par zone. Numéros de 1 à n, comme dans le Readme.
+            # Les canaux sont sur l'axe 0 des features EEG : (canaux, fenêtres, bandes).
+            x = x[[c - 1 for c in spec["canaux"]]]
+        x = _to_2d(x)
         if x.shape[0] != len(y):
             raise ValueError(f"{fname} / {m} : {x.shape[0]} fenêtres mais {len(y)} labels")
         blocks.append(x)

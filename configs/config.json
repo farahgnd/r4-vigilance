@@ -8,7 +8,11 @@
     "eeg_5b":   {"dir": "EEG_Feature_5Bands", "key": "de_movingAve"},
     "eog":      {"dir": "EOG_Feature",        "key": "features_table_icav_minh"},
     "eeg_2hz_front": {"dir": "Forehead_EEG/EEG_Feature_2Hz",    "key": "de_movingAve"},
-    "eeg_5b_front":  {"dir": "Forehead_EEG/EEG_Feature_5Bands", "key": "de_movingAve"}
+    "eeg_5b_front":  {"dir": "Forehead_EEG/EEG_Feature_5Bands", "key": "de_movingAve"},
+    "eeg_2hz_post":  {"dir": "EEG_Feature_2Hz",    "key": "de_movingAve", "canaux": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]},
+    "eeg_2hz_temp":  {"dir": "EEG_Feature_2Hz",    "key": "de_movingAve", "canaux": [1, 2, 3, 4, 5, 6]},
+    "eeg_5b_post":   {"dir": "EEG_Feature_5Bands", "key": "de_movingAve", "canaux": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]},
+    "eeg_5b_temp":   {"dir": "EEG_Feature_5Bands", "key": "de_movingAve", "canaux": [1, 2, 3, 4, 5, 6]}
   },
   "n_folds": 5,
   "seed": 42

@@ -7,20 +7,23 @@ Protocole (reproduit celui de l'article, section 2.4) :
   - validation croisée à 5 plis : 4 blocs pour apprendre, 1 bloc pour tester ;
   - normalisation et réglage des hyperparamètres appris sur l'apprentissage SEULEMENT
     (Pipeline + GridSearchCV interne, lui aussi par blocs) ;
-  - COR calculée sur les 5 blocs de test concaténés (comme l'article),
-    RMSE moyen ; résultat = moyenne et écart-type sur les sujets.
+  - COR et RMSE calculés sur les 885 prédictions hors pli concaténées (article, éq. 9-10) ;
+    résultat = moyenne et écart-type sur les sujets (voir reports/protocole.md).
 
 Usage :
     python src/baselines.py --modalities eog
-    python src/baselines.py --modalities eeg_2hz
-    python src/baselines.py --modalities eeg_2hz eog
+    python src/baselines.py --modalities eeg_2hz_front
+    python src/baselines.py --modalities eeg_2hz_front eog
 """
 import argparse
+import json
+import sys
 import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import GridSearchCV, KFold
@@ -52,18 +55,25 @@ def cor(a, b) -> float:
     return float(np.corrcoef(a, b)[0, 1])
 
 
+def rmse(a, b) -> float:
+    """Éq. 9 de l'article : racine de l'erreur quadratique moyenne."""
+    return float(np.sqrt(np.mean((np.asarray(a) - np.asarray(b)) ** 2)))
+
+
 def run_subject(X, y, models, n_folds):
+    """Renvoie, pour chaque modèle, les prédictions hors pli concaténées (885 valeurs),
+    la session (pli) de chaque fenêtre, puis COR et RMSE calculés sur ces 885 valeurs."""
     outer = KFold(n_splits=n_folds, shuffle=False)  # 5 blocs contigus
     out = {}
     for name, model in models.items():
-        y_true, y_pred, rmses = [], [], []
-        for tr, te in outer.split(X):
-            model.fit(X[tr], y[tr])
+        y_true, y_pred, sessions = [], [], []
+        for k, (tr, te) in enumerate(outer.split(X)):
+            model.fit(X[tr], y[tr])  # tout (scaler, réglage interne) appris sur tr seulement
             p = model.predict(X[te])
-            y_true.append(y[te]); y_pred.append(p)
-            rmses.append(np.sqrt(np.mean((y[te] - p) ** 2)))
+            y_true.append(y[te]); y_pred.append(p); sessions.append(np.full(len(te), k + 1))
         yt, yp = np.concatenate(y_true), np.concatenate(y_pred)
-        out[name] = {"COR": cor(yt, yp), "RMSE": float(np.mean(rmses)), "y_true": yt, "y_pred": yp}
+        out[name] = {"COR": cor(yt, yp), "RMSE": rmse(yt, yp), "y_true": yt, "y_pred": yp,
+                     "session": np.concatenate(sessions)}
     return out
 
 
@@ -88,20 +98,31 @@ def main():
         X, y = load_subject(cfg, s, args.modalities)
         res = run_subject(X, y, make_models(cfg["seed"]), cfg["n_folds"])
         for model, r in res.items():
-            rows.append({"sujet": s, "modele": model, "modalites": tag, "COR": r["COR"], "RMSE": r["RMSE"]})
-            preds.append(pd.DataFrame({"sujet": s, "modele": model, "t": np.arange(len(r["y_true"])),
+            rows.append({"sujet": s, "modele": model, "modalites": tag, "n_features": X.shape[1],
+                         "COR": r["COR"], "RMSE": r["RMSE"]})
+            # Traçabilité : sujet, session (pli 1 à 5) et indice de fenêtre pour chaque prédiction
+            preds.append(pd.DataFrame({"sujet": s, "modele": model, "session": r["session"],
+                                       "t": np.arange(len(r["y_true"])),
                                        "y_true": r["y_true"], "y_pred": r["y_pred"]}))
         print(f"  {s} ok ({time.time() - t0:.0f} s)")
 
+    temps = time.time() - t0
     df = pd.DataFrame(rows)
     Path("results").mkdir(exist_ok=True)
     df.to_csv(f"results/baselines_{tag}.csv", index=False)
     pd.concat(preds).to_csv(f"results/predictions_{tag}.csv", index=False)
 
+    # Métadonnées pour la reproductibilité (annexe du rapport, étape 5)
+    meta = {"modalites": tag, "n_sujets": len(subjects), "graine": cfg["seed"],
+            "temps_s": round(temps, 1), "python": sys.version.split()[0],
+            "numpy": np.__version__, "scikit-learn": sklearn.__version__,
+            "pandas": pd.__version__, "commande": " ".join(sys.argv)}
+    Path(f"results/meta_{tag}.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+
     summary = df.groupby("modele")[["COR", "RMSE"]].agg(["mean", "std"]).round(4)
     print("\nRésultats (moyenne et écart-type sur les sujets) :")
     print(summary)
-    print(f"\nTemps total : {time.time() - t0:.0f} s")
+    print(f"\nTemps total : {temps:.0f} s")
 
 
 if __name__ == "__main__":

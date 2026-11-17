@@ -12,3 +12,6 @@ reports/article/
 .venv/
 __pycache__/
 .ipynb_checkpoints/
+
+# Prédictions hors pli : volumineuses (39 Mo), régénérées par src/baselines.py
+results/predictions_*.csv
