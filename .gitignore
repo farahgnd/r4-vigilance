@@ -1,0 +1,11 @@
+# Données : jamais dans Git
+*.mat
+*.zip
+*.rar
+SEED-VIG/
+data/raw/
+
+# Python
+.venv/
+__pycache__/
+.ipynb_checkpoints/

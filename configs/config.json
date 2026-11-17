@@ -1,0 +1,13 @@
+{
+  "_commentaire": "Noms de dossiers et de variables à vérifier avec la sortie de src/explore.py, puis à corriger ici si besoin.",
+  "data_dir": "C:/Users/WIN11/Downloads/SEED-VIG/SEED-VIG",
+  "label_dir": "perclos_labels",
+  "label_key": "perclos",
+  "modalities": {
+    "eeg_2hz":  {"dir": "EEG_Feature_2Hz",    "key": "de_movingAve"},
+    "eeg_5b":   {"dir": "EEG_Feature_5Bands", "key": "de_movingAve"},
+    "eog":      {"dir": "EOG_Feature",        "key": "features_table_icav_minh"}
+  },
+  "n_folds": 5,
+  "seed": 42
+}
