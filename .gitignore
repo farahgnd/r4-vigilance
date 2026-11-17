@@ -5,6 +5,9 @@
 SEED-VIG/
 data/raw/
 
+# Articles et fiche R4 : documents de cours, pas de redistribution
+reports/article/
+
 # Python
 .venv/
 __pycache__/
