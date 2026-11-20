@@ -94,3 +94,20 @@ Versions prévues : Python 3.11.9, numpy 2.4.6, scipy 1.17.1, scikit-learn 1.9.1
 3. EDA sur les labels : distribution du PERCLOS, évolution dans le temps par sujet, autocorrélation (`src/eda.py`). Ce sont des statistiques sur les labels, pas un réglage de modèle.
 4. Baselines sur les 23 sujets : moyenne, Ridge, SVR pour EOG frontal, EEG frontal 2 Hz, fusion frontale ; secondaires EEG postérieur / temporal / 5 bandes.
 5. Tests appariés et IC, sauvegardés dans `results/`.
+
+---
+
+## Amendement du 2026-11-20 : grille SVR élargie (avant relance)
+
+**Motif** : à l'étape 2, la baseline Ridge a fait mieux que la SVR sur la fusion frontale (COR moyenne 0,792 contre 0,775 pour la SVR, mêmes plis). Une grille de 9 combinaisons, avec `gamma = scale`, est peut-être trop étroite. Ce constat vient des scores de **validation croisée** de l'étape 2 et d'une comparaison entre modèles ; il ne vient pas d'un choix fait sur les scores de test. L'amendement ne change ni les plis, ni les modalités, ni les métriques.
+
+**Ce qui change** : la grille de la SVR devient une grille de type LIBSVM (pas de 2 sur l'exposant) :
+- C = 2^k pour k ∈ {-5, -3, -1, 1, 3, 5, 7, 9, 10} (9 valeurs). Le dernier point, 2^10, est ajouté pour atteindre la borne demandée ; le pas de 2 à partir de -5 n'y arrive pas exactement.
+- gamma = 2^k pour k ∈ {-15, -13, ..., 1, 3} (10 valeurs, pas de 2).
+- Soit 90 combinaisons, réglées par validation interne (4 blocs contigus) sur l'apprentissage **seulement**, comme avant.
+
+**Inchangé** : StandardScaler appris sur l'apprentissage ; 5 blocs contigus ; COR et RMSE sur les 885 prédictions concaténées ; Ridge et moyenne ; modalités ; graine 42.
+
+**Conservation** : les résultats de l'ancienne grille (9 combinaisons : C ∈ {0,1 ; 1 ; 10}, gamma ∈ {scale ; 0,01 ; 0,001}) sont conservés dans `results/grille_v1/`. Ils sont présentés à côté des nouveaux dans `reports/ecarts.md`.
+
+**Règle** : la nouvelle grille sera la grille principale. Une éventuelle comparaison des grilles se fera uniquement avec les tests appariés déjà prévus, sans nouveau choix sur le test.
