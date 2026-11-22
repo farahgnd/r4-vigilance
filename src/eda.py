@@ -62,20 +62,25 @@ def main():
                  ).to_csv("results/eda_autocorrelation.csv", index=False)
 
     # Figures
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.hist(np.concatenate(list(labels.values())), bins=50, color="#4C72B0")
-    ax.set_xlabel("PERCLOS (labels, toutes expériences)")
+    toutes = np.concatenate(list(labels.values()))
+    part_sature = float(np.mean(toutes >= 0.99))  # fenêtres quasi égales à 1 (plafond du label)
+    fig, ax = plt.subplots(figsize=(6.5, 4.2))
+    ax.hist(toutes, bins=50, color="#4C72B0")
+    ax.axvline(1.0, color="#C44E52", lw=0.8, ls="--")
+    ax.text(0.97, ax.get_ylim()[1] * 0.80, f"{part_sature:.1%} des fenêtres\n≥ 0,99 (plafond)",
+            ha="right", fontsize=8, color="#C44E52")
+    ax.set_xlabel("PERCLOS (labels, 23 expériences)")
     ax.set_ylabel("Nombre de fenêtres")
-    ax.set_title("Distribution du PERCLOS (23 expériences, 885 fenêtres chacune)")
+    ax.set_title("Distribution du PERCLOS", fontsize=11)
     fig.tight_layout(); fig.savefig("figures/eda_distribution.png", dpi=150); plt.close(fig)
 
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(9, 4.2))
     for s in subjects[:5]:  # quelques expériences pour lisibilité
-        ax.plot(np.arange(len(labels[s])) * 8 / 60, labels[s], lw=0.8, label=s)
+        ax.plot(np.arange(len(labels[s])) * 8 / 60, labels[s], lw=0.8, label=s.replace(".mat", ""))
     ax.set_xlabel("Temps (minutes)")
     ax.set_ylabel("PERCLOS")
-    ax.set_title("Évolution du PERCLOS dans le temps (5 expériences)")
-    ax.legend(fontsize=7, loc="upper right")
+    ax.set_title("Évolution du PERCLOS dans le temps (5 expériences)", fontsize=11)
+    ax.legend(fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False)
     fig.tight_layout(); fig.savefig("figures/eda_evolution.png", dpi=150); plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -87,6 +92,7 @@ def main():
     fig.tight_layout(); fig.savefig("figures/eda_autocorrelation.png", dpi=150); plt.close(fig)
 
     print(f"{len(subjects)} expériences ; PERCLOS moyen : {stats['moyenne'].mean():.3f}")
+    print(f"Fenêtres avec PERCLOS >= 0,99 (plafond) : {part_sature:.1%}")
     print("Autocorrélation moyenne : lag 1 (8 s) = {:.3f}, lag 5 (40 s) = {:.3f}, lag 20 (160 s) = {:.3f}".format(
         acf_moy[1], acf_moy[5], acf_moy[20]))
     print("Tableaux : results/eda_perclos_par_sujet.csv, results/eda_autocorrelation.csv")

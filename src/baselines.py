@@ -34,8 +34,20 @@ from sklearn.svm import SVR
 from data import list_subjects, load_config, load_subject
 
 
-def make_models(seed: int) -> dict:
+# Grilles SVR. v1 : grille de l'étape 2 (conservée). v2 : grille de type LIBSVM,
+# amendement du 2026-11-20 de reports/protocole.md (pas de 2 sur l'exposant).
+GRILLES_SVR = {
+    "v1": {"C": [0.1, 1, 10], "gamma": ["scale", 0.01, 0.001]},
+    "v2": {
+        "C": [2.0 ** k for k in [-5, -3, -1, 1, 3, 5, 7, 9, 10]],   # 2^-5 ... 2^10
+        "gamma": [2.0 ** k for k in range(-15, 4, 2)],             # 2^-15 ... 2^3
+    },
+}
+
+
+def make_models(seed: int, grille: str = "v2") -> dict:
     inner = KFold(n_splits=4, shuffle=False)  # réglage interne, lui aussi par blocs
+    g = GRILLES_SVR[grille]
     return {
         "moyenne": make_pipeline(DummyRegressor(strategy="mean")),
         "ridge": GridSearchCV(
@@ -44,8 +56,8 @@ def make_models(seed: int) -> dict:
             cv=inner, scoring="neg_root_mean_squared_error"),
         "svr_rbf": GridSearchCV(
             make_pipeline(StandardScaler(), SVR(kernel="rbf")),
-            {"svr__C": [0.1, 1, 10], "svr__gamma": ["scale", 0.01, 0.001]},
-            cv=inner, scoring="neg_root_mean_squared_error"),
+            {"svr__C": g["C"], "svr__gamma": g["gamma"]},
+            cv=inner, scoring="neg_root_mean_squared_error", n_jobs=-1),
     }
 
 
@@ -82,7 +94,10 @@ def main():
     ap.add_argument("--config", default="configs/config.json")
     ap.add_argument("--modalities", nargs="+", default=["eog"])
     ap.add_argument("--max-subjects", type=int, default=None, help="Pour un essai rapide")
+    ap.add_argument("--grille", choices=["v1", "v2"], default="v2",
+                    help="v2 = grille LIBSVM (principale) ; v1 = grille de l'étape 2 (sortie dans results/grille_v1/)")
     args = ap.parse_args()
+    sortie = Path("results") if args.grille == "v2" else Path("results/grille_v1")
 
     cfg = load_config(args.config)
     np.random.seed(cfg["seed"])
@@ -96,7 +111,7 @@ def main():
     t0 = time.time()
     for s in subjects:
         X, y = load_subject(cfg, s, args.modalities)
-        res = run_subject(X, y, make_models(cfg["seed"]), cfg["n_folds"])
+        res = run_subject(X, y, make_models(cfg["seed"], args.grille), cfg["n_folds"])
         for model, r in res.items():
             rows.append({"sujet": s, "modele": model, "modalites": tag, "n_features": X.shape[1],
                          "COR": r["COR"], "RMSE": r["RMSE"]})
@@ -108,16 +123,17 @@ def main():
 
     temps = time.time() - t0
     df = pd.DataFrame(rows)
-    Path("results").mkdir(exist_ok=True)
-    df.to_csv(f"results/baselines_{tag}.csv", index=False)
-    pd.concat(preds).to_csv(f"results/predictions_{tag}.csv", index=False)
+    sortie.mkdir(parents=True, exist_ok=True)
+    df.to_csv(sortie / f"baselines_{tag}.csv", index=False)
+    pd.concat(preds).to_csv(sortie / f"predictions_{tag}.csv", index=False)
 
     # Métadonnées pour la reproductibilité (annexe du rapport, étape 5)
-    meta = {"modalites": tag, "n_sujets": len(subjects), "graine": cfg["seed"],
+    meta = {"modalites": tag, "grille_svr": args.grille, "grille_detail": GRILLES_SVR[args.grille],
+            "n_sujets": len(subjects), "graine": cfg["seed"],
             "temps_s": round(temps, 1), "python": sys.version.split()[0],
             "numpy": np.__version__, "scikit-learn": sklearn.__version__,
             "pandas": pd.__version__, "commande": " ".join(sys.argv)}
-    Path(f"results/meta_{tag}.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    (sortie / f"meta_{tag}.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
 
     summary = df.groupby("modele")[["COR", "RMSE"]].agg(["mean", "std"]).round(4)
     print("\nRésultats (moyenne et écart-type sur les sujets) :")
