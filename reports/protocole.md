@@ -111,3 +111,12 @@ Versions prévues : Python 3.11.9, numpy 2.4.6, scipy 1.17.1, scikit-learn 1.9.1
 **Conservation** : les résultats de l'ancienne grille (9 combinaisons : C ∈ {0,1 ; 1 ; 10}, gamma ∈ {scale ; 0,01 ; 0,001}) sont conservés dans `results/grille_v1/`. Ils sont présentés à côté des nouveaux dans `reports/ecarts.md`.
 
 **Règle** : la nouvelle grille sera la grille principale. Une éventuelle comparaison des grilles se fera uniquement avec les tests appariés déjà prévus, sans nouveau choix sur le test.
+
+---
+
+## Décision du 2026-11-22 : grille principale et analyse de sensibilité
+
+- **Résultat principal = grille v1** (C ∈ {0,1 ; 1 ; 10}, gamma ∈ {scale ; 0,01 ; 0,001}), c'est-à-dire le protocole d'origine.
+- **Grille v2** (LIBSVM, amendement du 2026-11-20) = **analyse de sensibilité** : elle est présentée à côté, sans remplacer le résultat principal.
+- Justification : la v2 dégrade la SVR sur toutes les modalités (constat de l'étape 3). Le choix de la grille principale reste donc fixé d'avance, et il n'est pas fait sur les scores de test.
+- Les C et gamma retenus à chaque pli sont enregistrés pour 3 sujets (contrôle des bords de grille), sans relancer les 23 sujets.
