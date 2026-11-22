@@ -2,6 +2,8 @@
 
 Référence : Zheng et Lu 2017, manuscrit fourni `reports/article/R4_Zheng2017.pdf` (16 pages, pagination du manuscrit). Protocole : `reports/protocole.md`, amendement du 2026-11-20 inclus. Carte : `reports/carte.md`.
 
+**Décision du 2026-11-22 (voir `reports/protocole.md`)** : le **résultat principal est la grille v1** (protocole d'origine). La **grille v2 est une analyse de sensibilité** : elle est présentée à côté, mais elle ne remplace pas le résultat principal.
+
 Deux grilles de réglage SVR sont présentées :
 - **v1** : C ∈ {0,1 ; 1 ; 10}, gamma ∈ {scale ; 0,01 ; 0,001} (9 combinaisons, grille de l'étape 2). Résultats dans `results/grille_v1/`.
 - **v2** : grille LIBSVM, C = 2^k pour k ∈ {-5, -3, …, 9, 10}, gamma = 2^k pour k ∈ {-15, -13, …, 3} (90 combinaisons). Amendement daté dans le protocole, motivé par l'écart Ridge > SVR constaté à l'étape 2 (validation croisée, pas le test). Résultats dans `results/`.
@@ -157,3 +159,58 @@ Lissage causal : moyenne des prédictions passées et courantes sur une fenêtre
 5. **Le lissage causal ne reproduit pas CCRF** : il retarde la réponse et dégrade légèrement les scores. Ce n'est pas une réfutation de CCRF, qui exploite le contexte dans les deux sens.
 6. **Les écarts ont des causes identifiées mais non mesurées** : sessions, `movingAve`, CPZ absent, métrique. Elles seront testées à l'étape 4 (sessions et `movingAve`) ou restent des hypothèses (CPZ, traitement des données).
 7. **La fusion 5 bandes (0,80 en v1) est exploratoire.** Elle n'était pas prévue : ne pas la présenter comme résultat.
+
+---
+
+## 8. Étape 4 : vérifications (résultats de la grille v1, principale)
+
+### 8.1 Hyperparamètres retenus (3 sujets, 5 plis, `results/hyperparametres_3sujets.csv`)
+
+Le réglage interne est enregistré pour 3 sujets seulement, comme demandé ; les 23 sujets ne sont pas relancés.
+
+| Grille | Modalité | C au bord | gamma au bord | Valeurs typiques |
+| --- | --- | --- | --- | --- |
+| v1 | EOG | 9/15 à C = 10 | 14/15 à gamma = 0,001 | C = 10 ou 1 ; gamma = 0,001 |
+| v1 | EEG frontal 2 Hz | 4/15 à C = 10 | 12/15 à gamma = 0,001 (3/15 `scale`) | C = 1 ou 10 |
+| v1 | Fusion | 8/15 à C = 10 | 15/15 à gamma = 0,001 | C = 10 |
+| v2 | EOG | 4/15 à C = 2¹⁰ (+2/15 à 2⁹) | 6/15 à gamma = 2⁻¹⁵ | C = 2⁵ à 2¹⁰ |
+| v2 | EEG frontal 2 Hz | 0/15 | 2/15 à gamma = 2⁻¹⁵ | C = 2 à 2⁷ |
+| v2 | Fusion | 2/15 à C = 2¹⁰ | 11/15 à gamma = 2⁻¹⁵ | C = 2⁵ à 2⁷ |
+
+**Lecture** : en v1, le gamma choisi est presque toujours le plus petit de la grille (0,001) ; en v2, il atteint souvent la borne 2⁻¹⁵ et le C la borne 2¹⁰. La SVR-RBF choisit donc un noyau très lisse, proche du linéaire, et la grille pousse vers la limite. Cela éclaire deux constats :
+- **Ridge fait aussi bien que la SVR** (0,792 contre 0,775 en v1 sur la fusion) : la non-linéarité du RBF n'est pas utilisée.
+- **Élargir la grille n'aide pas** : il faudrait descendre encore plus bas en gamma, ce qui revient à un modèle linéaire. Le problème n'est donc pas une borne trop étroite, mais un noyau RBF peu adapté à ces features.
+
+**Limite** : les C et gamma sont lus sur 3 sujets, pas sur les 23. C'est un diagnostic, pas une preuve générale.
+
+### 8.2 Découpage aléatoire contre blocs contigus (`results/decoupage_comparaisons.csv`)
+
+Même grille v1, 23 sujets, mêmes modalités ; seul le découpage externe change. Réglage interne contigu dans les deux cas.
+
+| Modalité | COR contigu → aléatoire | Δ COR [IC 95 %] | RMSE contigu → aléatoire | Δ RMSE [IC 95 %] |
+| --- | --- | --- | --- | --- |
+| EOG | 0,764 → 0,945 | +0,181 [+0,121 ; +0,252] | 0,126 → 0,066 | −0,061 [−0,074 ; −0,048] |
+| EEG frontal 2 Hz | 0,613 → 0,889 | +0,277 [+0,190 ; +0,367] | 0,151 → 0,092 | −0,059 [−0,070 ; −0,048] |
+| Fusion frontale | 0,775 → 0,952 | +0,177 [+0,108 ; +0,258] | 0,117 → 0,064 | −0,053 [−0,063 ; −0,044] |
+
+Toutes les différences sont significatives (Wilcoxon apparié, p < 0,001).
+
+**Conclusion** : le découpage aléatoire **gonfle les scores de 0,18 à 0,28 en COR** et divise l'erreur par deux environ. C'est la **preuve chiffrée de la fuite** entre fenêtres voisines : une fenêtre et ses voisines (autocorrélation 0,999 à 8 s) se retrouvent dans l'apprentissage et dans le test. Le découpage contigu est donc indispensable. Ce résultat donne aussi une piste d'explication pour les écarts avec l'article (section 4.2) : si l'article a utilisé un découpage non contigu, ses scores seraient gonflés de cette façon. C'est une hypothèse, non vérifiée.
+
+### 8.3 Lissage movingAve et LDS (`src/lissage_test.py`)
+
+**Alignement temporel** (proxy de la DE calculée sur les données brutes, 3 sujets, décalage en fenêtres de 8 s) :
+- **movingAve** : corrélation maximale à **k = −3** (r = 0,599), contre r = 0,536 à k = 0. Le maximum est **avant** l'instant courant : la valeur à t résume les fenêtres **passées**. Cela correspond à une moyenne causale sur **7 fenêtres** (le centre de la moyenne tombe 3 fenêtres en arrière). **movingAve n'utilise pas de fenêtre future.**
+- **LDS** : corrélation maximale à **k = 0** (r = 0,573). Le maximum est centré : le lissage **utilise des fenêtres futures**. Cohérent avec un lisseur de Kalman appliqué à toute la séquence d'une expérience (hypothèse de littérature, non vérifiée dans le code des auteurs).
+- **Limite** : la proxy brute n'est pas la DE exacte de l'article (pas de STFT de 8 s). Seule la position du maximum est interprétée, pas la valeur absolue de r.
+
+**Impact sur la prédiction** (SVR v1, 23 sujets, appariés, p bruts, non corrigés) :
+
+| Modalité | COR movingAve → LDS | p | RMSE movingAve → LDS | p |
+| --- | --- | --- | --- | --- |
+| EEG frontal 2 Hz | 0,613 → 0,633 | 0,098 | 0,151 → 0,147 | 0,16 |
+| Fusion frontale | 0,775 → 0,784 | 0,38 | 0,117 → 0,115 | 0,086 |
+
+**Lecture** : LDS, qui utilise le futur, est un peu meilleur, mais la différence **n'est pas significative**. On ne peut pas conclure que l'utilisation du futur gonfle les scores. En revanche, LDS introduit une dépendance entre le bloc de test et ses voisins d'apprentissage à la frontière des blocs. Nous gardons `movingAve` (causal), comme décidé avant calcul.
+
+**Features non lissées** : elles ne sont pas fournies par SEED-VIG pour les EEG (seules les variantes `movingAve` et `LDS` existent). Cette comparaison est donc **impossible** avec les données disponibles.
