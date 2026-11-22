@@ -225,4 +225,4 @@ Résultats détaillés dans `reports/extension.md`, section 8. Résumé :
 - **H2 confirmée pour la COR** : la fusion ne dépasse pas l'EOG seul de façon significative (+0,021 ; p Holm = 0,80).
 - **Point non prévu** : pour le RMSE, la fusion est significativement moins bonne que l'EOG (+0,034 ; p Holm = 0,03). Rapporté sans le masquer.
 - **Comparaison avec l'intra-sujet** : les niveaux de COR baissent peu pour l'EOG (0,79 en inter, 0,76 en intra) ; pour l'EEG seul, la baisse est nette en RMSE (0,248 contre 0,151). Le protocole n'est pas strictement identique, donc cette comparaison reste descriptive.
-- **Lien avec l'écart à l'article** : le protocole intra-sujet de l'article est favorable à l'EEG, qui s'ajuste à une personne donnée. L'extension montre que cet avantage ne se transfère pas aux personnes nouvelles.
+- **Lien avec l'écart à l'article** (hypothèse, non testée) : le protocole intra-sujet de l'article pourrait avantager l'EEG, qui s'ajuste à une personne donnée. L'extension montre que la performance de l'EEG chute fortement pour des personnes nouvelles ; elle ne prouve pas que l'article a surestimé l'EEG.
