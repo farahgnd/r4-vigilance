@@ -1,0 +1,7 @@
+comparaison,a,b,metrique,n_sujets,diff_a_moins_b,n_sujets_a_meilleur,p_wilcoxon,p_holm,significatif_5pct
+H1 : EEG frontal vs EOG,eeg_2hz_front,eog,COR,23,-0.2571295355750827,3,8.845329284667969e-05,0.00017690658569335938,True
+H1 : EEG frontal vs EOG,eeg_2hz_front,eog,RMSE,23,0.09436906574418556,4,0.0007376670837402344,0.002213001251220703,True
+H2 : fusion vs EOG,eeg_2hz_front+eog,eog,COR,23,0.020851962373459088,10,0.7997725009918213,0.7997725009918213,False
+H2 : fusion vs EOG,eeg_2hz_front+eog,eog,RMSE,23,0.03364145532033825,6,0.030086994171142578,0.030086994171142578,True
+Info : fusion vs EEG frontal,eeg_2hz_front+eog,eeg_2hz_front,COR,23,0.27798149794854177,22,7.152557373046875e-07,2.1457672119140625e-06,True
+Info : fusion vs EEG frontal,eeg_2hz_front+eog,eeg_2hz_front,RMSE,23,-0.0607276104238473,16,0.00914621353149414,0.01829242706298828,True

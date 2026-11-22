@@ -214,3 +214,15 @@ Toutes les différences sont significatives (Wilcoxon apparié, p < 0,001).
 **Lecture** : LDS, qui utilise le futur, est un peu meilleur, mais la différence **n'est pas significative**. On ne peut pas conclure que l'utilisation du futur gonfle les scores. En revanche, LDS introduit une dépendance entre le bloc de test et ses voisins d'apprentissage à la frontière des blocs. Nous gardons `movingAve` (causal), comme décidé avant calcul.
 
 **Features non lissées** : elles ne sont pas fournies par SEED-VIG pour les EEG (seules les variantes `movingAve` et `LDS` existent). Cette comparaison est donc **impossible** avec les données disponibles.
+
+---
+
+## 9. Étape 4 : extension inter-sujets (leave-one-subject-out, `reports/extension.md`)
+
+Résultats détaillés dans `reports/extension.md`, section 8. Résumé :
+
+- **H1 confirmée** : l'EEG frontal est significativement moins bon que l'EOG en inter-sujets (COR 0,53 contre 0,79 ; p Holm = 0,0002). Le signal oculaire se transfère mieux d'une personne à l'autre que l'EEG.
+- **H2 confirmée pour la COR** : la fusion ne dépasse pas l'EOG seul de façon significative (+0,021 ; p Holm = 0,80).
+- **Point non prévu** : pour le RMSE, la fusion est significativement moins bonne que l'EOG (+0,034 ; p Holm = 0,03). Rapporté sans le masquer.
+- **Comparaison avec l'intra-sujet** : les niveaux de COR baissent peu pour l'EOG (0,79 en inter, 0,76 en intra) ; pour l'EEG seul, la baisse est nette en RMSE (0,248 contre 0,151). Le protocole n'est pas strictement identique, donc cette comparaison reste descriptive.
+- **Lien avec l'écart à l'article** : le protocole intra-sujet de l'article est favorable à l'EEG, qui s'ajuste à une personne donnée. L'extension montre que cet avantage ne se transfère pas aux personnes nouvelles.

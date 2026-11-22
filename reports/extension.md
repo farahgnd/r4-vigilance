@@ -68,3 +68,41 @@ Résumé : moyenne ± écart-type sur les 23 sujets, IC 95 % par bootstrap sur l
 - Aucun réglage sur les scores de test inter-sujets : la grille est v1, comme dans le protocole principal.
 - Aucune sélection de modalité ou de variante après avoir vu les résultats.
 - Pas de nouvelle variante de lissage dans l'extension (`movingAve` seul).
+
+---
+
+## 8. Résultats (calcul terminé le 2026-11-22, `results/loso_par_sujet.csv`, `results/extension_comparaisons.csv`)
+
+23 plis (un par sujet testé), grille v1, SVR. Chaque sujet testé donne 885 prédictions.
+
+| Modalité | Protocole | COR (moyenne ± ET) [IC 95 %] | RMSE (moyenne ± ET) [IC 95 %] |
+| --- | --- | --- | --- |
+| EOG | inter-sujets | 0,789 ± 0,248 [0,672 ; 0,870] | 0,154 ± 0,065 [0,129 ; 0,182] |
+| EOG | intra-sujet (réf.) | 0,764 ± 0,193 [0,682 ; 0,835] | 0,126 ± 0,041 [0,111 ; 0,143] |
+| EEG frontal 2 Hz | inter-sujets | 0,532 ± 0,387 [0,368 ; 0,676] | 0,248 ± 0,117 [0,203 ; 0,296] |
+| EEG frontal 2 Hz | intra-sujet (réf.) | 0,613 ± 0,265 [0,505 ; 0,715] | 0,151 ± 0,038 [0,137 ; 0,168] |
+| Fusion frontale | inter-sujets | 0,810 ± 0,208 [0,717 ; 0,879] | 0,188 ± 0,104 [0,151 ; 0,232] |
+| Fusion frontale | intra-sujet (réf.) | 0,775 ± 0,212 [0,685 ; 0,853] | 0,117 ± 0,030 [0,106 ; 0,130] |
+
+### Comparaisons appariées (Wilcoxon sur les 23 sujets, correction de Holm)
+
+| Comparaison | Métrique | Δ moyenne | Sujets où le premier est meilleur | p Holm | Significatif (5 %) |
+| --- | --- | --- | --- | --- | --- |
+| H1 : EEG frontal − EOG | COR | −0,257 | 3/23 | 0,0002 | oui |
+| H1 : EEG frontal − EOG | RMSE | +0,094 | 4/23 | 0,002 | oui |
+| H2 : fusion − EOG | COR | +0,021 | 10/23 | 0,80 | non |
+| H2 : fusion − EOG | RMSE | +0,034 | 6/23 | 0,030 | oui (fusion moins bonne) |
+| Info : fusion − EEG frontal | COR | +0,278 | 22/23 | < 0,001 | oui |
+| Info : fusion − EEG frontal | RMSE | −0,061 | 16/23 | 0,018 | oui |
+
+### Verdict selon la règle de décision (section 6)
+
+- **H1 confirmée.** L'EEG frontal seul est significativement moins bon que l'EOG seul en inter-sujets, dans les deux métriques.
+- **H2 confirmée pour la COR** : pas de gain significatif de la fusion sur l'EOG (p Holm = 0,80). Ce critère est celui de la règle, et il est respecté.
+- **Point non prévu, rapporté tel quel** : pour le RMSE, la fusion est significativement **moins bonne** que l'EOG seul (+0,034). La règle ne le couvrait pas. Il ne s'agit pas d'un gain de la fusion, mais d'une dégradation de l'erreur absolue, probablement due à quelques sujets où l'EEG extrapole mal.
+- **Lecture de la COR** : la moyenne de la fusion (0,810) dépasse celle de l'EOG (0,789), mais la fusion n'est meilleure que pour 10 sujets sur 23. L'écart de moyenne est tiré par quelques sujets, et l'écart-type inter-sujets est élevé (0,21 à 0,39). Le test sur les rangs ne voit donc pas de gain.
+
+### Limites
+
+- Protocoles différents (intra et inter) : la comparaison des niveaux est descriptive, seuls les tests inter-sujets entre modalités sont inférentiels.
+- Le calcul n'a pas été sauvegardé pli par pli pendant son exécution. Il s'est déroulé sans interruption (aucune erreur dans le log), mais la version protégée `src/extension_loso_reprise.py` a été préparée sans être utilisée.
