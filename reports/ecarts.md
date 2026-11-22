@@ -173,9 +173,9 @@ Le réglage interne est enregistré pour 3 sujets seulement, comme demandé ; le
 | v1 | EOG | 9/15 à C = 10 | 14/15 à gamma = 0,001 | C = 10 ou 1 ; gamma = 0,001 |
 | v1 | EEG frontal 2 Hz | 4/15 à C = 10 | 12/15 à gamma = 0,001 (3/15 `scale`) | C = 1 ou 10 |
 | v1 | Fusion | 8/15 à C = 10 | 15/15 à gamma = 0,001 | C = 10 |
-| v2 | EOG | 4/15 à C = 2¹⁰ (+2/15 à 2⁹) | 6/15 à gamma = 2⁻¹⁵ | C = 2⁵ à 2¹⁰ |
-| v2 | EEG frontal 2 Hz | 0/15 | 2/15 à gamma = 2⁻¹⁵ | C = 2 à 2⁷ |
-| v2 | Fusion | 2/15 à C = 2¹⁰ | 11/15 à gamma = 2⁻¹⁵ | C = 2⁵ à 2⁷ |
+| v2 | EOG | 4/15 à C = 2¹⁰ (+2/15 à 2⁹) | 6/15 à gamma = 2⁻¹⁵ | C de 0,5 à 2¹⁰ (majorité à 2⁵ ou plus) |
+| v2 | EEG frontal 2 Hz | 0/15 | 2/15 à gamma = 2⁻¹⁵ | C de 0,125 à 2⁷ |
+| v2 | Fusion | 2/15 à C = 2¹⁰ | 11/15 à gamma = 2⁻¹⁵ | C de 2 à 2¹⁰ (dont 7/15 à 2⁷ ou plus) |
 
 **Lecture** : en v1, le gamma choisi est presque toujours le plus petit de la grille (0,001) ; en v2, il atteint souvent la borne 2⁻¹⁵ et le C la borne 2¹⁰. La SVR-RBF choisit donc un noyau très lisse, proche du linéaire, et la grille pousse vers la limite. Cela éclaire deux constats :
 - **Ridge fait aussi bien que la SVR** (0,792 contre 0,775 en v1 sur la fusion) : la non-linéarité du RBF n'est pas utilisée.

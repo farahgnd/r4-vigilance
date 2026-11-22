@@ -17,8 +17,10 @@ Produit :
   - results/comparaisons_appariees.csv
 
 Usage :
-    python src/comparaisons.py
+    python src/comparaisons.py --dossier results/grille_v1   (résultat principal, grille v1)
+    python src/comparaisons.py                              (sensibilité, grille v2)
 """
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +28,7 @@ import pandas as pd
 from scipy.stats import wilcoxon
 
 MODELE_PRINCIPAL = "svr_rbf"
+DOSSIER = Path("results")  # remplacé par --dossier
 N_BOOT = 10_000
 SEED = 42
 ALPHA = 0.05
@@ -53,7 +56,7 @@ PAIRES = [
 
 
 def charger(modalite: str) -> pd.DataFrame:
-    chemin = Path(f"results/baselines_{modalite}.csv")
+    chemin = DOSSIER / f"baselines_{modalite}.csv"
     if not chemin.exists():
         raise SystemExit(f"Résultat absent : {chemin} (lancer src/baselines.py)")
     return pd.read_csv(chemin)
@@ -80,12 +83,16 @@ def holm(pvals: list[float]) -> list[float]:
 
 
 def main():
+    global DOSSIER
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dossier", default="results", help="results (grille v2) ou results/grille_v1")
+    DOSSIER = Path(ap.parse_args().dossier)
     rng = np.random.default_rng(SEED)
     donnees = {}
     lignes_tableau = []
 
     for mod in MODALITES:
-        if not Path(f"results/baselines_{mod}.csv").exists():
+        if not (DOSSIER / f"baselines_{mod}.csv").exists():
             print(f"(ignoré : pas de résultat pour {mod})")
             continue
         df = charger(mod)
@@ -105,7 +112,7 @@ def main():
             })
     tableau = pd.DataFrame(lignes_tableau)
     Path("results").mkdir(exist_ok=True)
-    tableau.to_csv("results/tableau_principal.csv", index=False)
+    tableau.to_csv(DOSSIER / "tableau_principal.csv", index=False)
 
     # Comparaisons appariées sur le modèle principal (SVR)
     comparaisons = []
@@ -138,7 +145,7 @@ def main():
             masque = comp["metrique"] == metrique
             comp.loc[masque, "p_holm"] = holm(comp.loc[masque, "p_wilcoxon"].tolist())
         comp["significatif_holm_5pct"] = comp["p_holm"] < ALPHA
-    comp.to_csv("results/comparaisons_appariees.csv", index=False)
+    comp.to_csv(DOSSIER / "comparaisons_appariees.csv", index=False)
 
     pd.set_option("display.width", 200)
     print("Tableau principal (SVR, moyenne et IC 95 % sur les sujets) :")
